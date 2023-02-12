@@ -1,7 +1,7 @@
 use super::*;
 
 #[mt_derive(to = "clt")]
-pub struct ArgbColor {
+pub struct Color {
     pub a: u8,
     pub r: u8,
     pub g: u8,
@@ -99,7 +99,8 @@ pub enum ToCltPkt {
         add: Vec<ObjAdd>,
     } = 49,
     ObjMsgs {
-        msgs: Vec<ObjMsg>,
+        #[mt(len0)]
+        msgs: Vec<ObjIdMsg>,
     } = 50,
     Hp {
         hp: u16,
@@ -270,8 +271,8 @@ pub enum ToCltPkt {
     } = 83,
     CloudParams {
         density: f32,
-        diffuse_color: ArgbColor,
-        ambient_color: ArgbColor,
+        diffuse_color: Color,
+        ambient_color: Color,
         height: f32,
         thickness: f32,
         speed: [f32; 2],
@@ -294,7 +295,10 @@ pub enum ToCltPkt {
         signal: ModChanSig,
         channel: String,
     } = 88,
-    NodeMetasChanged(#[mt(size32)] HashMap<[i16; 3], NodeMeta>) = 89,
+    NodeMetasChanged {
+        #[mt(size32)]
+        changed: HashMap<[i16; 3], NodeMeta>,
+    } = 89,
     SunParams {
         visible: bool,
         texture: String,
@@ -322,5 +326,5 @@ pub enum ToCltPkt {
     FormspecPrepend {
         prepend: String,
     } = 97,
-    MinimapModes(MinimapModePkt) = 98,
+    MinimapModes(MinimapModesPkt) = 98,
 }

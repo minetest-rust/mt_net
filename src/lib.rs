@@ -9,6 +9,8 @@ pub use rand;
 #[cfg(feature = "serde")]
 pub use serde;
 
+pub use mt_ser;
+
 use enumset::{EnumSet, EnumSetType};
 use mt_ser::mt_derive;
 use std::{

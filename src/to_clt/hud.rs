@@ -110,13 +110,13 @@ pub struct MinimapMode {
 }
 
 #[mt_derive(to = "clt", custom)]
-pub struct MinimapModePkt {
+pub struct MinimapModesPkt {
     current: u16,
     modes: Vec<MinimapMode>,
 }
 
 #[cfg(feature = "server")]
-impl MtSerialize for MinimapModePkt {
+impl MtSerialize for MinimapModesPkt {
     fn mt_serialize<C: MtCfg>(
         &self,
         writer: &mut impl std::io::Write,
@@ -130,7 +130,7 @@ impl MtSerialize for MinimapModePkt {
 }
 
 #[cfg(feature = "client")]
-impl MtDeserialize for MinimapModePkt {
+impl MtDeserialize for MinimapModesPkt {
     fn mt_deserialize<C: MtCfg>(reader: &mut impl std::io::Read) -> Result<Self, DeserializeError> {
         let len = DefCfg::read_len(reader)?;
         let current = MtDeserialize::mt_deserialize::<DefCfg>(reader)?;
