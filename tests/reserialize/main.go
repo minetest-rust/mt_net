@@ -5,12 +5,14 @@ import (
 	"os"
 )
 
-// WIP: test against the Go mt package
 func main() {
-	pkt, err := mt.DeserializePkt(os.Stdin, false)
+	toSrv := os.Args[1] == "ToSrvPkt"
+
+	pkt, err := mt.DeserializePkt(os.Stdin, !toSrv)
 	if err != nil {
-		panic(err)
+		os.Stderr.WriteString(err.Error())
+		os.Exit(1)
 	}
 
-	mt.SerializePkt(*pkt, os.Stdout, false)
+	mt.SerializePkt(*pkt, os.Stdout, toSrv)
 }
