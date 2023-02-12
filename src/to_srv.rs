@@ -35,8 +35,13 @@ pub enum Interaction {
     Activate,
 }
 
-#[mt_derive(to = "srv")]
-pub struct PointedThing; // TODO
+#[mt_derive(to = "srv", repr = "u8", tag = "type")]
+#[mt(const8 = 0)]
+pub enum PointedThing {
+    None = 0,
+    Node { under: [u16; 3], above: [u16; 3] },
+    Obj { obj: u16 },
+}
 
 #[mt_derive(to = "srv", repr = "u16", tag = "type", content = "data")]
 pub enum ToSrvPkt {
