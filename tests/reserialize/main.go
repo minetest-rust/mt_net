@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/dragonfireclient/mt"
 	"os"
+	"sync"
 )
 
 func main() {
@@ -14,5 +15,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	mt.SerializePkt(*pkt, os.Stdout, toSrv)
+	var wg sync.WaitGroup
+	mt.SerializePkt(*pkt, os.Stdout, toSrv, &wg)
+	wg.Wait()
 }

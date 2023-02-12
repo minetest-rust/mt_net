@@ -29,9 +29,9 @@ where
 
                     let input = T::generate_random_variant(&mut rng, i);
 
-                    let mut writer = Vec::new();
+                    let mut input_payload = Vec::new();
                     input
-                        .mt_serialize::<DefCfg>(&mut writer)
+                        .mt_serialize::<DefCfg>(&mut input_payload)
                         .map_err(|e| format!("serialize error: {e}\ninput: {input:?}"))?;
 
                     let mut child = Command::new(&reserialize)
@@ -42,13 +42,13 @@ where
                         .spawn()
                         .expect("failed to spawn reserialize");
 
-                    let mut stdin = child.stdin.take().expect("failed to open stdin");
-                    let payload = writer.clone();
+                    let mut stdin = child.stdin.take().unwrap();
+                    let stdin_payload = input_payload.clone();
                     std::thread::spawn(move || {
-                        stdin.write_all(&payload).expect("failed to write to stdin");
+                        stdin.write_all(&stdin_payload).unwrap();
                     });
 
-                    let command_out = child.wait_with_output().expect("failed to read stdout");
+                    let command_out = child.wait_with_output().unwrap();
 
                     let stderr = String::from_utf8_lossy(&command_out.stderr);
                     if command_out.status.success() {
@@ -60,7 +60,7 @@ where
                         return Err(format!(
                             "reserialize returned failure\n\
 							input: {input:?}\n\
-							input payload: {writer:?}\n\
+							input payload: {input_payload:?}\n\
 							stderr: {stderr}"
                         )
                         .into());
@@ -71,7 +71,7 @@ where
                         format!(
                             "deserialize error: {e}\n\
 							input: {input:?}\n\
-							input payload: {writer:?}\n\
+							input payload: {input_payload:?}\n\
 							output payload: {:?}\n\
 							stderr: {stderr}",
                             reader.get_ref()
@@ -83,7 +83,7 @@ where
                             "output does not match input\n\
 							input: {input:?}\n\
 							output: {output:?}\n\
-							input payload: {writer:?}\n\
+							input payload: {input_payload:?}\n\
 							output payload: {:?}\n\
 							stderr: {stderr}",
                             reader.get_ref(),
