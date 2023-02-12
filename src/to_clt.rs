@@ -30,7 +30,7 @@ pub use hud::*;
 pub use media::*;
 pub use status::*;
 
-#[mt_derive(to = "clt", repr = "u8", tag = "type", content = "data")]
+#[mt_derive(to = "clt", repr = "u16", tag = "type", content = "data")]
 pub enum ToCltPkt {
     Hello {
         serialize_version: u8,
