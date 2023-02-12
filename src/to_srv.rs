@@ -36,10 +36,10 @@ pub enum Interaction {
 }
 
 #[mt_derive(to = "srv", repr = "u8", tag = "type")]
-#[mt(const8 = 0)]
+#[mt(const8 = 0)] // version
 pub enum PointedThing {
     None = 0,
-    Node { under: [u16; 3], above: [u16; 3] },
+    Node { under: [i16; 3], above: [i16; 3] },
     Obj { obj: u16 },
 }
 
