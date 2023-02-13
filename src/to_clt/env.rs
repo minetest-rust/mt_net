@@ -2,7 +2,7 @@ use super::*;
 
 #[mt_derive(to = "clt")]
 pub struct ObjProps {
-    #[mt(const8 = 4)] // version
+    #[mt(const_before = "4u8")] // version
     pub max_hp: u16, // player only
     pub collide_with_nodes: bool,
     pub weight: f32, // deprecated
@@ -93,6 +93,8 @@ pub struct ObjPhysicsOverride {
     pub old_sneak: bool,
 }
 
+const GENERIC_CAO: u8 = 101;
+
 #[mt_derive(to = "clt", repr = "u8", tag = "type", content = "data")]
 pub enum ObjMsg {
     Props(ObjProps) = 0,
@@ -116,9 +118,8 @@ pub enum ObjMsg {
     Attach(ObjAttach),
     PhysicsOverride(ObjPhysicsOverride),
     SpawnInfant {
+        #[mt(const_after = "GENERIC_CAO")]
         id: u16,
-        #[mt(const8 = 101)] // GenericCAO
-        infant_type: (),
     } = 11,
     AnimSpeed {
         speed: f32,
@@ -128,31 +129,31 @@ pub enum ObjMsg {
 #[mt_derive(to = "clt")]
 pub struct ObjIdMsg {
     pub id: u16,
-    #[mt(size16)]
+    #[mt(size = "u16")]
     pub msg: ObjMsg,
 }
 
 #[mt_derive(to = "clt")]
-pub struct ObjInitMsg(#[mt(size32)] ObjMsg);
+pub struct ObjInitMsg(#[mt(size = "u32")] pub ObjMsg);
 
 #[mt_derive(to = "clt")]
 pub struct ObjInitData {
-    #[mt(const8 = 1)] // version
+    #[mt(const_before = "1u8")] // version
     pub name: String,
     pub is_player: bool,
     pub id: u16,
     pub pos: [f32; 3],
     pub rot: [f32; 3],
     pub hp: u16,
-    #[mt(len8)]
+    #[mt(len = "u8")]
     pub msgs: Vec<ObjInitMsg>,
 }
 
 #[mt_derive(to = "clt")]
 pub struct ObjAdd {
     pub id: u16,
-    #[mt(const8 = 101)] // GenericCAO
-    #[mt(size32)]
+    #[mt(const_before = "GENERIC_CAO")]
+    #[mt(size = "u32")]
     pub init_data: ObjInitData,
 }
 
@@ -174,25 +175,14 @@ pub const CONTENT_IGNORE: u16 = 127;
 pub struct MapBlock {
     pub flags: EnumSet<MapBlockFlag>,
     pub lit_from: u16,
-
-    #[mt(const8 = 2)]
-    #[serde(skip)]
-    pub param0_size: (),
-
-    #[mt(const8 = 2)]
-    #[serde(skip)]
-    pub param12_size: (),
-
+    #[mt(const_before = "2u8")] // param0 size
+    #[mt(const_before = "2u8")] // param1 size + param2 size
     #[serde(with = "serde_arrays")]
     pub param_0: [u16; 4096],
     #[serde(with = "serde_arrays")]
     pub param_1: [u8; 4096],
     #[serde(with = "serde_arrays")]
     pub param_2: [u8; 4096],
-
+    #[mt(const_after = "2u8")] // version
     pub node_metas: HashMap<u16, NodeMeta>,
-
-    #[mt(const8 = 2)]
-    #[serde(skip)]
-    pub version: (),
 }

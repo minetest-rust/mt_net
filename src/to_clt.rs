@@ -34,7 +34,7 @@ pub use status::*;
 pub enum ToCltPkt {
     Hello {
         serialize_version: u8,
-        #[mt(const16 = 1)] // compression
+        #[mt(const_before = "1u16")] // compression
         proto_version: u16,
         auth_methods: EnumSet<AuthMethod>,
         username: String,
@@ -46,6 +46,7 @@ pub enum ToCltPkt {
         sudo_auth_methods: EnumSet<AuthMethod>,
     } = 3,
     AcceptSudoMode {
+        #[mt(const_after = "[0u8; 15]")]
         sudo_auth_methods: EnumSet<AuthMethod>,
     } = 4,
     DenySudoMode = 5,
@@ -86,11 +87,11 @@ pub enum ToCltPkt {
         should_cache: bool,
     } = 44,
     ChatMsg {
-        #[mt(const8 = 1)]
+        #[mt(const_before = "1u8")]
         msg_type: ChatMsgType,
-        #[mt(utf16)]
+        #[mt(len = "Utf16")]
         sender: String,
-        #[mt(utf16)]
+        #[mt(len = "Utf16")]
         text: String,
         timestamp: i64, // unix time
     } = 47,
@@ -99,7 +100,7 @@ pub enum ToCltPkt {
         add: Vec<ObjAdd>,
     } = 49,
     ObjMsgs {
-        #[mt(len0)]
+        #[mt(len = "()")]
         msgs: Vec<ObjIdMsg>,
     } = 50,
     Hp {
@@ -113,7 +114,7 @@ pub enum ToCltPkt {
         yaw: f32,
     } = 52,
     LegacyKick {
-        #[mt(utf16)]
+        #[mt(len = "Utf16")]
         reason: String,
     } = 53,
     Fov {
@@ -128,18 +129,19 @@ pub enum ToCltPkt {
     Media {
         n: u16,
         i: u16,
-        files: Vec<MediaPayload>, // FIXME: can we use a HashMap for this?
+        #[mt(len = "(u32, (DefCfg, u32))")]
+        files: HashMap<String, Vec<u8>>, // name -> payload
     } = 56,
     NodeDefs {
         defs: Vec<NodeDef>,
     } = 58,
     AnnounceMedia {
-        files: Vec<MediaAnnounce>, // FIXME: can we use a HashMap for this?
+        files: HashMap<String, String>, // name -> base64 hash
         url: String,
     } = 60,
-    #[mt(size32, zlib)]
+    #[mt(size = "u32", zlib)]
     ItemDefs {
-        #[mt(const8 = 0)] // version
+        #[mt(const_before = "0u8")] // version
         defs: Vec<ItemDef>,
         aliases: HashMap<String, String>,
     } = 61,
@@ -163,18 +165,18 @@ pub enum ToCltPkt {
         privs: HashSet<String>,
     } = 65,
     InvFormspec {
-        #[mt(size32)]
+        #[mt(size = "u32")]
         formspec: String,
     } = 66,
     DetachedInv {
         name: String,
         keep: bool,
         len: u16,
-        #[mt(len0)]
+        #[mt(len = "()")]
         inv: String,
     } = 67,
     ShowFormspec {
-        #[mt(len32)]
+        #[mt(len = "u32")]
         formspec: String,
         formname: String,
     } = 68,
@@ -196,7 +198,7 @@ pub enum ToCltPkt {
         expiration_time: f32,
         size: f32,
         collide: bool,
-        #[mt(len32)]
+        #[mt(len = "u32")]
         texture: String,
         vertical: bool,
         collision_rm: bool,
@@ -216,7 +218,7 @@ pub enum ToCltPkt {
         expiration_time: [f32; 2],
         size: [f32; 2],
         collide: bool,
-        #[mt(len32)]
+        #[mt(len = "u32")]
         texture: String,
         id: u32,
         vertical: bool,
@@ -296,7 +298,7 @@ pub enum ToCltPkt {
         channel: String,
     } = 88,
     NodeMetasChanged {
-        #[mt(size32)]
+        #[mt(size = "u32")]
         changed: HashMap<[i16; 3], NodeMeta>,
     } = 89,
     SunParams {

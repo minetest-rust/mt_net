@@ -36,28 +36,11 @@ pub enum Interaction {
 }
 
 #[mt_derive(to = "srv", repr = "u8", tag = "type")]
-#[mt(const8 = 0)] // version
+#[mt(const_before = "0u8")] // version
 pub enum PointedThing {
     None = 0,
     Node { under: [i16; 3], above: [i16; 3] },
     Obj { obj: u16 },
-}
-
-#[mt_derive(to = "srv")]
-pub struct String32(#[mt(len32)] pub String);
-
-impl std::ops::Deref for String32 {
-    type Target = String;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl std::ops::DerefMut for String32 {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
 }
 
 #[mt_derive(to = "srv", repr = "u16", tag = "type", content = "data")]
@@ -65,7 +48,7 @@ pub enum ToSrvPkt {
     Nil = 0,
     Init {
         serialize_version: u8,
-        #[mt(const16 = 1)] // supported compression
+        #[mt(const_before = "1u16")] // supported compression
         min_proto_version: u16,
         max_proto_version: u16,
         player_name: String,
@@ -87,19 +70,19 @@ pub enum ToSrvPkt {
     } = 25,
     PlayerPos(PlayerPos) = 35,
     GotBlocks {
-        #[mt(len8)]
+        #[mt(len = "u8")]
         blocks: Vec<[i16; 3]>,
     } = 36,
     DeletedBlocks {
-        #[mt(len8)]
+        #[mt(len = "u8")]
         blocks: Vec<[i16; 3]>,
     } = 37,
     InvAction {
-        #[mt(len0)]
+        #[mt(len = "()")]
         action: String,
     } = 49,
     ChatMsg {
-        #[mt(utf16)]
+        #[mt(len = "Utf16")]
         msg: String,
     } = 50,
     FallDmg {
@@ -112,7 +95,7 @@ pub enum ToSrvPkt {
     Interact {
         action: Interaction,
         item_slot: u16,
-        #[mt(size32)]
+        #[mt(size = "u32")]
         pointed: PointedThing,
         pos: PlayerPos,
     } = 57,
@@ -122,11 +105,13 @@ pub enum ToSrvPkt {
     NodeMetaFields {
         pos: [i16; 3],
         formname: String,
-        fields: HashMap<String, String32>,
+        #[mt(len = "(DefCfg, (DefCfg, u32))")]
+        fields: HashMap<String, String>,
     } = 59,
     InvFields {
         formname: String,
-        fields: HashMap<String, String32>,
+        #[mt(len = "(DefCfg, (DefCfg, u32))")]
+        fields: HashMap<String, String>,
     } = 60,
     ReqMedia {
         filenames: Vec<String>,

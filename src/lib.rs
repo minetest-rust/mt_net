@@ -19,7 +19,7 @@ use std::{
 };
 
 #[cfg(any(feature = "client", feature = "server"))]
-use mt_ser::{DefCfg, DeserializeError, MtCfg, MtDeserialize, MtSerialize, SerializeError};
+use mt_ser::{DefCfg, DeserializeError, MtCfg, MtDeserialize, MtSerialize, SerializeError, Utf16};
 
 #[cfg(feature = "random")]
 use generate_random::GenerateRandom;

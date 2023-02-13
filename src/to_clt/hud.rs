@@ -87,7 +87,7 @@ pub enum HudFlag {
 
 #[mt_derive(to = "clt", repr = "u16", tag = "attribute", content = "value")]
 pub enum HotbarParam {
-    Size(#[mt(const16 = 4)] u32) = 0,
+    Size(#[mt(const_before = "4u16")] u32) = 0,
     Image(String),
     SelectionImage(String),
 }
@@ -134,7 +134,7 @@ impl MtDeserialize for MinimapModesPkt {
     fn mt_deserialize<C: MtCfg>(reader: &mut impl std::io::Read) -> Result<Self, DeserializeError> {
         let len = DefCfg::read_len(reader)?;
         let current = MtDeserialize::mt_deserialize::<DefCfg>(reader)?;
-        let modes = mt_ser::mt_deserialize_sized_seq(&len, reader)?.try_collect()?;
+        let modes = mt_ser::mt_deserialize_sized_seq::<DefCfg, _>(&len, reader)?.try_collect()?;
 
         Ok(Self { current, modes })
     }
