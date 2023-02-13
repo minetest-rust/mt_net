@@ -315,8 +315,8 @@ pub enum ToCltPkt {
     } = 91,
     StarParams {
         visible: bool,
-        texture: String,
-        tone_map: String,
+        count: u32,
+        color: Color,
         size: f32,
     } = 92,
     SrpBytesSaltB {
