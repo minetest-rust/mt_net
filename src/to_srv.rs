@@ -43,6 +43,23 @@ pub enum PointedThing {
     Obj { obj: u16 },
 }
 
+#[mt_derive(to = "srv")]
+pub struct String32(#[mt(len32)] pub String);
+
+impl std::ops::Deref for String32 {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::ops::DerefMut for String32 {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 #[mt_derive(to = "srv", repr = "u16", tag = "type", content = "data")]
 pub enum ToSrvPkt {
     Nil = 0,
@@ -105,11 +122,11 @@ pub enum ToSrvPkt {
     NodeMetaFields {
         pos: [i16; 3],
         formname: String,
-        fields: HashMap<String, String>,
+        fields: HashMap<String, String32>,
     } = 59,
     InvFields {
         formname: String,
-        fields: HashMap<String, String>,
+        fields: HashMap<String, String32>,
     } = 60,
     ReqMedia {
         filenames: Vec<String>,
