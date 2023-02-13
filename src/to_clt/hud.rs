@@ -19,7 +19,8 @@ pub enum HudChange {
     Align([f32; 2]),
     Offset([f32; 2]),
     WorldPos([f32; 3]),
-    ZIndex(i32),
+    Size([i32; 2]),
+    ZIndex(i32), // this is i16 in HudAdd, minetest is weird
     Text2(String),
     Style(EnumSet<HudStyleFlag>),
 }
@@ -47,7 +48,8 @@ pub struct HudElement {
     pub align: [f32; 2],
     pub offset: [f32; 2],
     pub world_pos: [f32; 3],
-    pub z_index: i32,
+    pub size: [i32; 2],
+    pub z_index: i16,
     pub text_2: String,
     pub style: EnumSet<HudStyleFlag>,
 }
@@ -67,7 +69,8 @@ impl HudElement {
             Align(v) => self.align = v,
             Offset(v) => self.offset = v,
             WorldPos(v) => self.world_pos = v,
-            ZIndex(v) => self.z_index = v,
+            Size(v) => self.size = v,
+            ZIndex(v) => self.z_index = v.try_into().unwrap_or(0),
             Text2(v) => self.text_2 = v,
             Style(v) => self.style = v,
         }
@@ -87,7 +90,7 @@ pub enum HudFlag {
 
 #[mt_derive(to = "clt", repr = "u16", tag = "attribute", content = "value")]
 pub enum HotbarParam {
-    Size(#[mt(const_before = "4u16")] u32) = 0,
+    Size(#[mt(const_before = "4u16")] u32) = 1,
     Image(String),
     SelectionImage(String),
 }

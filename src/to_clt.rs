@@ -132,11 +132,13 @@ pub enum ToCltPkt {
         #[mt(len = "(u32, (DefCfg, u32))")]
         files: HashMap<String, Vec<u8>>, // name -> payload
     } = 56,
+    #[mt(size = "u32", zlib)]
     NodeDefs {
+        #[mt(const_before = "1u8")] // version
         defs: Vec<NodeDef>,
     } = 58,
     AnnounceMedia {
-        files: HashMap<String, String>, // name -> base64 hash
+        files: HashMap<String, String>, // name -> base64 sha1 hash
         url: String,
     } = 60,
     #[mt(size = "u32", zlib)]
@@ -189,6 +191,9 @@ pub enum ToCltPkt {
         fast_speed: f32,
         climb_speed: f32,
         jump_speed: f32,
+        fluidity: f32,
+        smoothing: f32,
+        sink: f32,
         gravity: f32,
     } = 69,
     SpawnParticle {
