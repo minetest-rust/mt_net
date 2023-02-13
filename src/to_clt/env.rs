@@ -166,6 +166,10 @@ pub enum MapBlockFlag {
 
 pub const ALWAYS_LIT_FROM: u16 = 0xf000;
 
+pub const CONTENT_UNKNOWN: u16 = 125;
+pub const CONTENT_AIR: u16 = 126;
+pub const CONTENT_IGNORE: u16 = 127;
+
 #[mt_derive(to = "clt")]
 pub struct MapBlock {
     pub flags: EnumSet<MapBlockFlag>,
