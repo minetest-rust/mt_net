@@ -1,5 +1,7 @@
 #![feature(iterator_try_collect)]
 
+pub use mt_ser;
+
 #[cfg(feature = "random")]
 pub use generate_random;
 
@@ -9,8 +11,6 @@ pub use rand;
 #[cfg(feature = "serde")]
 pub use serde;
 
-pub use mt_ser;
-
 use enumset::{EnumSet, EnumSetType};
 use mt_ser::mt_derive;
 use std::{
@@ -19,7 +19,7 @@ use std::{
 };
 
 #[cfg(any(feature = "client", feature = "server"))]
-use mt_ser::{DefCfg, DeserializeError, MtCfg, MtDeserialize, MtSerialize, SerializeError, Utf16};
+use mt_ser::{DefCfg, MtCfg, MtDeserialize, MtSerialize, Utf16};
 
 #[cfg(feature = "random")]
 use generate_random::GenerateRandom;

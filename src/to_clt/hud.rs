@@ -123,7 +123,7 @@ impl MtSerialize for MinimapModesPkt {
     fn mt_serialize<C: MtCfg>(
         &self,
         writer: &mut impl std::io::Write,
-    ) -> Result<(), SerializeError> {
+    ) -> Result<(), mt_ser::SerializeError> {
         DefCfg::write_len(self.modes.len(), writer)?;
         self.current.mt_serialize::<DefCfg>(writer)?;
         self.modes.mt_serialize::<()>(writer)?;
@@ -134,7 +134,9 @@ impl MtSerialize for MinimapModesPkt {
 
 #[cfg(feature = "client")]
 impl MtDeserialize for MinimapModesPkt {
-    fn mt_deserialize<C: MtCfg>(reader: &mut impl std::io::Read) -> Result<Self, DeserializeError> {
+    fn mt_deserialize<C: MtCfg>(
+        reader: &mut impl std::io::Read,
+    ) -> Result<Self, mt_ser::DeserializeError> {
         let len = DefCfg::read_len(reader)?;
         let current = MtDeserialize::mt_deserialize::<DefCfg>(reader)?;
         let modes = mt_ser::mt_deserialize_sized_seq::<DefCfg, _>(&len, reader)?.try_collect()?;

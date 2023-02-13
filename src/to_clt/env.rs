@@ -1,5 +1,15 @@
 use super::*;
 
+#[mt_derive(to = "clt", repr = "str")]
+pub enum ObjVisual {
+    Cube,
+    Sprite,
+    UprightSprite,
+    Mesh,
+    Wielditem,
+    Item,
+}
+
 #[mt_derive(to = "clt")]
 pub struct ObjProps {
     #[mt(const_before = "4u8")] // version
@@ -9,7 +19,7 @@ pub struct ObjProps {
     pub collision_box: ([f32; 3], [f32; 3]),
     pub selection_box: ([f32; 3], [f32; 3]),
     pub pointable: bool,
-    pub visual: String,
+    pub visual: ObjVisual,
     pub visual_size: [f32; 3],
     pub textures: Vec<String>,
     pub sprite_sheet_size: [i16; 2], // in sprites
@@ -93,7 +103,7 @@ pub struct ObjPhysicsOverride {
     pub old_sneak: bool,
 }
 
-const GENERIC_CAO: u8 = 101;
+pub const GENERIC_CAO: u8 = 101;
 
 #[mt_derive(to = "clt", repr = "u8", tag = "type", content = "data")]
 pub enum ObjMsg {

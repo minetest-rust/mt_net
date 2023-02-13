@@ -22,12 +22,14 @@ mod chat;
 mod env;
 mod hud;
 mod media;
+mod sky;
 mod status;
 
 pub use chat::*;
 pub use env::*;
 pub use hud::*;
 pub use media::*;
+pub use sky::*;
 pub use status::*;
 
 #[mt_derive(to = "clt", repr = "u16", tag = "type", content = "data")]
@@ -81,7 +83,7 @@ pub enum ToCltPkt {
         vel: [f32; 3],
     } = 43,
     MediaPush {
-        no_len_hash: String,
+        raw_hash: String,
         filename: String,
         callback_token: u32,
         should_cache: bool,
@@ -255,8 +257,7 @@ pub enum ToCltPkt {
     Breath {
         breath: u16,
     } = 78,
-    // TODO
-    SkyParams = 79,
+    SkyParams(SkyParams) = 79,
     OverrideDayNightRatio {
         #[serde(rename = "override")]
         ratio_override: bool,
@@ -276,14 +277,7 @@ pub enum ToCltPkt {
     RemoveParticleSpawner {
         id: u32,
     } = 83,
-    CloudParams {
-        density: f32,
-        diffuse_color: Color,
-        ambient_color: Color,
-        height: f32,
-        thickness: f32,
-        speed: [f32; 2],
-    } = 84,
+    CloudParams(CloudParams) = 84,
     FadeSound {
         id: u32,
         step: f32,
@@ -306,26 +300,9 @@ pub enum ToCltPkt {
         #[mt(size = "u32")]
         changed: HashMap<[i16; 3], NodeMeta>,
     } = 89,
-    SunParams {
-        visible: bool,
-        texture: String,
-        tone_map: String,
-        rise: String,
-        rising: bool,
-        size: f32,
-    } = 90,
-    MoonParams {
-        visible: bool,
-        texture: String,
-        tone_map: String,
-        size: f32,
-    } = 91,
-    StarParams {
-        visible: bool,
-        count: u32,
-        color: Color,
-        size: f32,
-    } = 92,
+    SunParams(SunParams) = 90,
+    MoonParams(MoonParams) = 91,
+    StarParams(StarParams) = 92,
     SrpBytesSaltB {
         salt: Vec<u8>,
         b: Vec<u8>,

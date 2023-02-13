@@ -13,6 +13,7 @@ server = []
 
 [dependencies]
 mt_ser = { git = "https://github.com/minetest-rust/mt_ser" }
+#mt_ser = { path = "../mt_ser" }
 enumset = { git = "https://github.com/Lymia/enumset" }
 generate-random = { git = "https://github.com/minetest-rust/generate-random", features = ["enumset"], optional = true }
 rand = { version = "0.8.5", optional = true }
