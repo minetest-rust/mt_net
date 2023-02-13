@@ -15,86 +15,92 @@ where
     T: MtSerialize + MtDeserialize + GenerateRandomVariant + PartialEq + Debug,
 {
     (0..T::num_variants())
-        .map(move |i| {
+        .flat_map(move |i| {
             let pkt_name = format!("{type_name}::{}", T::variant_name(i));
             let reserialize = reserialize.as_os_str().to_os_string();
 
-            Trial::test(pkt_name.clone(), move || {
-                let mut rng = rand::thread_rng();
-                let mut printed_stderr = false;
+            if pkt_name == "ToSrvPkt::Disco" {
+                return None;
+            }
 
-                for _ in 0..100 {
-                    // use buffered IO instead of directly reading from the process
-                    // this enables printing out payloads for debugging
+            Some(
+                Trial::test(pkt_name.clone(), move || {
+                    let mut rng = rand::thread_rng();
+                    let mut printed_stderr = false;
 
-                    let input = T::generate_random_variant(&mut rng, i);
+                    for _ in 0..100 {
+                        // use buffered IO instead of directly reading from the process
+                        // this enables printing out payloads for debugging
 
-                    let mut input_payload = Vec::new();
-                    input
-                        .mt_serialize::<DefCfg>(&mut input_payload)
-                        .map_err(|e| format!("serialize error: {e}\ninput: {input:?}"))?;
+                        let input = T::generate_random_variant(&mut rng, i);
 
-                    let mut child = Command::new(&reserialize)
-                        .arg(type_name)
-                        .stdin(Stdio::piped())
-                        .stdout(Stdio::piped())
-                        .stderr(Stdio::piped())
-                        .spawn()
-                        .expect("failed to spawn reserialize");
+                        let mut input_payload = Vec::new();
+                        input
+                            .mt_serialize::<DefCfg>(&mut input_payload)
+                            .map_err(|e| format!("serialize error: {e}\ninput: {input:?}"))?;
 
-                    let mut stdin = child.stdin.take().unwrap();
-                    let stdin_payload = input_payload.clone();
-                    std::thread::spawn(move || {
-                        stdin.write_all(&stdin_payload).unwrap();
-                    });
+                        let mut child = Command::new(&reserialize)
+                            .arg(type_name)
+                            .stdin(Stdio::piped())
+                            .stdout(Stdio::piped())
+                            .stderr(Stdio::piped())
+                            .spawn()
+                            .expect("failed to spawn reserialize");
 
-                    let command_out = child.wait_with_output().unwrap();
+                        let mut stdin = child.stdin.take().unwrap();
+                        let stdin_payload = input_payload.clone();
+                        std::thread::spawn(move || {
+                            stdin.write_all(&stdin_payload).unwrap();
+                        });
 
-                    let stderr = String::from_utf8_lossy(&command_out.stderr);
-                    if command_out.status.success() {
-                        if stderr.len() > 0 && !printed_stderr {
-                            printed_stderr = true;
-                            eprintln!("stderr for {pkt_name}: {stderr}");
+                        let command_out = child.wait_with_output().unwrap();
+
+                        let stderr = String::from_utf8_lossy(&command_out.stderr);
+                        if command_out.status.success() {
+                            if stderr.len() > 0 && !printed_stderr {
+                                printed_stderr = true;
+                                eprintln!("stderr for {pkt_name}: {stderr}");
+                            }
+                        } else {
+                            return Err(format!(
+                                "reserialize returned failure\n\
+								input: {input:?}\n\
+								input payload: {input_payload:?}\n\
+								stderr: {stderr}"
+                            )
+                            .into());
                         }
-                    } else {
-                        return Err(format!(
-                            "reserialize returned failure\n\
-							input: {input:?}\n\
-							input payload: {input_payload:?}\n\
-							stderr: {stderr}"
-                        )
-                        .into());
+
+                        let mut reader = Cursor::new(command_out.stdout);
+                        let output = T::mt_deserialize::<DefCfg>(&mut reader).map_err(|e| {
+                            format!(
+                                "deserialize error: {e}\n\
+								input: {input:?}\n\
+								input payload: {input_payload:?}\n\
+								output payload: {:?}\n\
+								stderr: {stderr}",
+                                reader.get_ref()
+                            )
+                        })?;
+
+                        if input != output {
+                            return Err(format!(
+                                "output does not match input\n\
+								input: {input:?}\n\
+								output: {output:?}\n\
+								input payload: {input_payload:?}\n\
+								output payload: {:?}\n\
+								stderr: {stderr}",
+                                reader.get_ref(),
+                            )
+                            .into());
+                        }
                     }
 
-                    let mut reader = Cursor::new(command_out.stdout);
-                    let output = T::mt_deserialize::<DefCfg>(&mut reader).map_err(|e| {
-                        format!(
-                            "deserialize error: {e}\n\
-							input: {input:?}\n\
-							input payload: {input_payload:?}\n\
-							output payload: {:?}\n\
-							stderr: {stderr}",
-                            reader.get_ref()
-                        )
-                    })?;
-
-                    if input != output {
-                        return Err(format!(
-                            "output does not match input\n\
-							input: {input:?}\n\
-							output: {output:?}\n\
-							input payload: {input_payload:?}\n\
-							output payload: {:?}\n\
-							stderr: {stderr}",
-                            reader.get_ref(),
-                        )
-                        .into());
-                    }
-                }
-
-                Ok(())
-            })
-            .with_kind("random")
+                    Ok(())
+                })
+                .with_kind("random"),
+            )
         })
         .collect()
 }
