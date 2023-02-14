@@ -18,19 +18,53 @@ pub enum ModChanSig {
     SetState,
 }
 
-mod chat;
-mod env;
-mod hud;
-mod media;
-mod sky;
-mod status;
+#[mt_derive(to = "clt", repr = "u32", enumset)]
+pub enum AuthMethod {
+    LegacyPasswd,
+    Srp,
+    FirstSrp,
+}
 
-pub use chat::*;
-pub use env::*;
+#[mt_derive(to = "clt", repr = "u64", enumset)]
+pub enum CsmRestrictionFlag {
+    NoCsms,
+    NoChatMsgs,
+    NoItemDefs,
+    NoNodeDefs,
+    LimitMapRange,
+    NoPlayerList,
+}
+
+#[mt_derive(to = "clt", repr = "u8")]
+pub enum ChatMsgType {
+    Raw = 0,
+    Normal,
+    Announce,
+    System,
+}
+
+#[mt_derive(to = "clt", repr = "u8")]
+pub enum PlayerListUpdateType {
+    Init = 0,
+    Add,
+    Remove,
+}
+
+mod hud;
+mod inv;
+mod kick;
+mod map;
+mod media;
+mod obj;
+mod sky;
+
 pub use hud::*;
+pub use inv::*;
+pub use kick::*;
+pub use map::*;
 pub use media::*;
+pub use obj::*;
 pub use sky::*;
-pub use status::*;
 
 #[mt_derive(to = "clt", repr = "u16", tag = "type", content = "data")]
 pub enum ToCltPkt {
@@ -69,6 +103,7 @@ pub enum ToCltPkt {
         pos: [i16; 3],
     } = 34,
     Inv {
+        #[mt(len = "()")]
         inv: String,
     } = 39,
     TimeOfDay {
@@ -297,7 +332,8 @@ pub enum ToCltPkt {
         channel: String,
     } = 88,
     NodeMetasChanged {
-        #[mt(size = "u32")]
+        #[mt(size = "u32", zlib)]
+        #[mt(len = "NodeMetasLen")]
         changed: HashMap<[i16; 3], NodeMeta>,
     } = 89,
     SunParams(SunParams) = 90,

@@ -61,20 +61,3 @@ impl fmt::Display for KickReason {
         }
     }
 }
-
-#[mt_derive(to = "clt", repr = "u32", enumset)]
-pub enum AuthMethod {
-    LegacyPasswd,
-    Srp,
-    FirstSrp,
-}
-
-#[mt_derive(to = "clt", repr = "u64", enumset)]
-pub enum CsmRestrictionFlag {
-    NoCsms,
-    NoChatMsgs,
-    NoItemDefs,
-    NoNodeDefs,
-    LimitMapRange,
-    NoPlayerList,
-}

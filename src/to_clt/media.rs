@@ -9,9 +9,6 @@ pub struct ItemDef; // TODO
 #[mt_derive(to = "clt")]
 pub struct NodeDef; // TODO
 
-#[mt_derive(to = "clt")]
-pub struct NodeMeta; // TODO
-
 #[mt_derive(to = "clt", repr = "u8")]
 pub enum SoundSrcType {
     Nowhere = 0,

@@ -107,7 +107,7 @@ pub const GENERIC_CAO: u8 = 101;
 
 #[mt_derive(to = "clt", repr = "u8", tag = "type", content = "data")]
 pub enum ObjMsg {
-    Props(ObjProps) = 0,
+    Props(Box<ObjProps>) = 0,
     Pos(ObjPos),
     TextureMod {
         #[serde(rename = "mod")]
@@ -165,34 +165,4 @@ pub struct ObjAdd {
     #[mt(const_before = "GENERIC_CAO")]
     #[mt(size = "u32")]
     pub init_data: ObjInitData,
-}
-
-#[mt_derive(to = "clt", repr = "u8", enumset)]
-pub enum MapBlockFlag {
-    IsUnderground = 0,
-    DayNightDiff,
-    LightExpired,
-    NotGenerated,
-}
-
-pub const ALWAYS_LIT_FROM: u16 = 0xf000;
-
-pub const CONTENT_UNKNOWN: u16 = 125;
-pub const CONTENT_AIR: u16 = 126;
-pub const CONTENT_IGNORE: u16 = 127;
-
-#[mt_derive(to = "clt")]
-pub struct MapBlock {
-    pub flags: EnumSet<MapBlockFlag>,
-    pub lit_from: u16,
-    #[mt(const_before = "2u8")] // param0 size
-    #[mt(const_before = "2u8")] // param1 size + param2 size
-    #[serde(with = "serde_arrays")]
-    pub param_0: [u16; 4096],
-    #[serde(with = "serde_arrays")]
-    pub param_1: [u8; 4096],
-    #[serde(with = "serde_arrays")]
-    pub param_2: [u8; 4096],
-    #[mt(const_after = "2u8")] // version
-    pub node_metas: HashMap<u16, NodeMeta>,
 }
