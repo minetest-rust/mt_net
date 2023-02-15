@@ -1,5 +1,4 @@
 use super::*;
-use mt_ser::{DeserializeError, SerializeError};
 
 #[mt_derive(to = "clt", repr = "u8", enumset)]
 pub enum MapBlockFlag {
@@ -32,11 +31,15 @@ pub struct NodeMeta {
 #[derive(Debug)]
 pub struct NodeMetasLen;
 
+#[cfg(any(feature = "client", feature = "server"))]
 impl MtCfg for NodeMetasLen {
     type Len = <DefCfg as MtCfg>::Len;
     type Inner = <DefCfg as MtCfg>::Inner;
 
-    fn write_len(len: usize, writer: &mut impl std::io::Write) -> Result<(), SerializeError> {
+    fn write_len(
+        len: usize,
+        writer: &mut impl std::io::Write,
+    ) -> Result<(), mt_ser::SerializeError> {
         if len == 0 {
             0u8.mt_serialize::<DefCfg>(writer)
         } else {
@@ -45,11 +48,14 @@ impl MtCfg for NodeMetasLen {
         }
     }
 
-    fn read_len(reader: &mut impl std::io::Read) -> Result<Self::Len, DeserializeError> {
+    fn read_len(reader: &mut impl std::io::Read) -> Result<Self::Len, mt_ser::DeserializeError> {
         match u8::mt_deserialize::<DefCfg>(reader)? {
             0 => Ok(0),
             2 => DefCfg::read_len(reader),
-            x => Err(DeserializeError::InvalidEnum("NodeMetasLen", Box::new(x))),
+            x => Err(mt_ser::DeserializeError::InvalidEnum(
+                "NodeMetasLen",
+                Box::new(x),
+            )),
         }
     }
 }

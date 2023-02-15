@@ -16,8 +16,8 @@ pub struct ObjProps {
     pub max_hp: u16, // player only
     pub collide_with_nodes: bool,
     pub weight: f32, // deprecated
-    pub collision_box: ([f32; 3], [f32; 3]),
-    pub selection_box: ([f32; 3], [f32; 3]),
+    pub collision_box: RangeInclusive<[f32; 3]>,
+    pub selection_box: RangeInclusive<[f32; 3]>,
     pub pointable: bool,
     pub visual: ObjVisual,
     pub visual_size: [f32; 3],

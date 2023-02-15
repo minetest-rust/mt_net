@@ -1,5 +1,6 @@
 #![feature(iterator_try_collect)]
 
+pub use enumset;
 pub use mt_ser;
 
 #[cfg(feature = "random")]
@@ -16,6 +17,7 @@ use mt_ser::mt_derive;
 use std::{
     collections::{HashMap, HashSet},
     fmt,
+    ops::RangeInclusive,
 };
 
 #[cfg(any(feature = "client", feature = "server"))]

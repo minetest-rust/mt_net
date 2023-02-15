@@ -15,7 +15,6 @@ test = ["client", "server", "random"]
 enumset = { git = "https://github.com/Lymia/enumset" }
 generate-random = { git = "https://github.com/minetest-rust/generate-random", features = ["enumset"], optional = true }
 mt_ser = { git = "https://github.com/minetest-rust/mt_ser" }
-#mt_ser = { path = "../mt_ser" }
 rand = { version = "0.8.5", optional = true }
 serde = { version = "1.0.152", features = ["derive"], optional = true }
 serde_arrays = { version = "0.1.0", optional = true }

@@ -170,10 +170,7 @@ pub enum ToCltPkt {
         files: HashMap<String, Vec<u8>>, // name -> payload
     } = 56,
     #[mt(size = "u32", zlib)]
-    NodeDefs {
-        #[mt(const_before = "1u8")] // version
-        defs: Vec<NodeDef>,
-    } = 58,
+    NodeDefs(#[mt(const_before = "1u8")] NodeDefs) = 58,
     AnnounceMedia {
         files: HashMap<String, String>, // name -> base64 sha1 hash
         url: String,
@@ -188,7 +185,7 @@ pub enum ToCltPkt {
         id: u32,
         name: String,
         gain: f32,
-        src_type: SoundSrcType,
+        source: SoundSource,
         pos: [f32; 3],
         src_obj_id: u16,
         #[serde(rename = "loop")]
@@ -254,11 +251,11 @@ pub enum ToCltPkt {
     AddParticleSpawner {
         amount: u16,
         duration: f32,
-        pos: [[f32; 3]; 2],
-        vel: [[f32; 3]; 2],
-        acc: [[f32; 3]; 2],
-        expiration_time: [f32; 2],
-        size: [f32; 2],
+        pos: RangeInclusive<[f32; 3]>,
+        vel: RangeInclusive<[f32; 3]>,
+        acc: RangeInclusive<[f32; 3]>,
+        expiration_time: RangeInclusive<f32>,
+        size: RangeInclusive<f32>,
         collide: bool,
         #[mt(len = "u32")]
         texture: String,
