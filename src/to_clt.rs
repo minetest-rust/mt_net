@@ -285,7 +285,7 @@ pub enum ToCltPkt {
         flags: EnumSet<HudFlag>,
         mask: EnumSet<HudFlag>,
     } = 76,
-    SetHotbarParam(HotbarParam) = 77,
+    HotbarParam(HotbarParam) = 77,
     Breath {
         breath: u16,
     } = 78,
@@ -344,4 +344,20 @@ pub enum ToCltPkt {
         prepend: String,
     } = 97,
     MinimapModes(MinimapModesPkt) = 98,
+}
+
+impl PktInfo for ToCltPkt {
+    fn pkt_info(&self) -> (u8, bool) {
+        use ToCltPkt::*;
+
+        match self {
+            BlockData { .. } | Media { .. } => (2, true),
+            AddHud { .. }
+            | ChangeHud { .. }
+            | RemoveHud { .. }
+            | HudFlags { .. }
+            | HotbarParam(_) => (1, true),
+            _ => (0, true),
+        }
+    }
 }

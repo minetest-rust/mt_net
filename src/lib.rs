@@ -29,8 +29,18 @@ use generate_random::GenerateRandom;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "conn")]
+mod conn;
+
+#[cfg(feature = "conn")]
+pub use conn::*;
+
 mod to_clt;
 mod to_srv;
 
 pub use to_clt::*;
 pub use to_srv::*;
+
+pub trait PktInfo {
+    fn pkt_info(&self) -> (u8, bool);
+}

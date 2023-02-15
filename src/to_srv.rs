@@ -77,6 +77,10 @@ pub enum ToSrvPkt {
         #[mt(len = "u8")]
         blocks: Vec<[i16; 3]>,
     } = 37,
+    HaveMedia {
+        #[mt(len = "u8")]
+        tokens: Vec<u32>,
+    } = 41,
     InvAction {
         #[mt(len = "()")]
         action: String,
@@ -113,7 +117,7 @@ pub enum ToSrvPkt {
         #[mt(len = "(DefCfg, (DefCfg, u32))")]
         fields: HashMap<String, String>,
     } = 60,
-    ReqMedia {
+    RequestMedia {
         filenames: Vec<String>,
     } = 64,
     CltReady {
@@ -137,4 +141,25 @@ pub enum ToSrvPkt {
         m: Vec<u8>,
     } = 82,
     Disco = 0xffff,
+}
+
+impl PktInfo for ToSrvPkt {
+    fn pkt_info(&self) -> (u8, bool) {
+        use ToSrvPkt::*;
+
+        match self {
+            Init { .. } => (1, false),
+            Init2 { .. }
+            | RequestMedia { .. }
+            | CltReady { .. }
+            | FirstSrp { .. }
+            | SrpBytesA { .. }
+            | SrpBytesM { .. } => (1, true),
+            PlayerPos { .. } => (0, false),
+            GotBlocks { .. } | HaveMedia { .. } | DeletedBlocks { .. } | RemovedSounds { .. } => {
+                (2, true)
+            }
+            _ => (0, true),
+        }
+    }
 }
