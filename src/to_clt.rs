@@ -70,7 +70,7 @@ pub use sky::*;
 pub enum ToCltPkt {
     Hello {
         serialize_version: u8,
-        #[mt(const_before = "1u16")] // compression
+        #[mt(const_before = "0u16")] // compression
         proto_version: u16,
         auth_methods: EnumSet<AuthMethod>,
         username: String,
