@@ -28,7 +28,10 @@ pub async fn connect(addr: &str) -> io::Result<(MtSender<RemoteSrv>, MtReceiver<
 
 /*
 
+#[cfg(feature = "server")]
 pub struct RemoteClt;
+
+#[cfg(feature = "server")]
 impl Remote for RemoteClt {
     type Sender = mt_rudp::ToClt;
     type To = crate::ToCltPkt;
@@ -37,7 +40,10 @@ impl Remote for RemoteClt {
 
 */
 
+#[derive(Debug)]
 pub struct MtSender<R: Remote>(pub mt_rudp::RudpSender<R::UdpSender>);
+
+#[derive(Debug)]
 pub struct MtReceiver<R: Remote>(pub mt_rudp::RudpReceiver<R::UdpSender>);
 
 #[derive(Error, Debug)]
@@ -100,5 +106,12 @@ impl<R: Remote> MtSender<R> {
             .await?;
 
         Ok(())
+    }
+}
+
+// derive(Clone) adds unwanted trait bound to R
+impl<R: Remote> Clone for MtSender<R> {
+    fn clone(&self) -> Self {
+        Self(self.0.clone())
     }
 }
