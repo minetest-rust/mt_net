@@ -4,8 +4,8 @@ use mt_ser::{DefCfg, MtDeserialize, MtSerialize};
 use std::{borrow::Cow, io};
 use thiserror::Error;
 
-pub trait Remote {
-    type UdpSender: mt_rudp::UdpSender;
+pub trait Peer {
+    type UdpPeer: mt_rudp::UdpPeer;
     type PktFrom: MtDeserialize;
     type PktTo: MtSerialize + PktInfo;
 }
@@ -14,8 +14,8 @@ pub trait Remote {
 pub struct RemoteSrv;
 
 #[cfg(feature = "client")]
-impl Remote for RemoteSrv {
-    type UdpSender = mt_rudp::ToSrv;
+impl Peer for RemoteSrv {
+    type UdpPeer = mt_rudp::RemoteSrv;
     type PktTo = crate::ToSrvPkt;
     type PktFrom = crate::ToCltPkt;
 }
@@ -32,19 +32,16 @@ pub async fn connect(addr: &str) -> io::Result<(MtSender<RemoteSrv>, MtReceiver<
 pub struct RemoteClt;
 
 #[cfg(feature = "server")]
-impl Remote for RemoteClt {
-    type Sender = mt_rudp::ToClt;
+impl Peer for RemoteClt {
+    type UdpPeer = mt_rudp::RemoteClt;
     type To = crate::ToCltPkt;
     type From = crate::ToSrvPkt;
 }
 
 */
 
-#[derive(Debug)]
-pub struct MtSender<R: Remote>(pub mt_rudp::RudpSender<R::UdpSender>);
-
-#[derive(Debug)]
-pub struct MtReceiver<R: Remote>(pub mt_rudp::RudpReceiver<R::UdpSender>);
+pub struct MtSender<P: Peer>(pub mt_rudp::RudpSender<P::UdpPeer>);
+pub struct MtReceiver<P: Peer>(pub mt_rudp::RudpReceiver<P::UdpPeer>);
 
 #[derive(Error, Debug)]
 pub enum RecvError {
@@ -64,7 +61,7 @@ pub enum SendError {
 
 macro_rules! impl_delegate {
     ($T:ident) => {
-        impl<R: Remote> $T<R> {
+        impl<P: Peer> $T<P> {
             delegate! {
                 to self.0 {
                     pub async fn peer_id(&self) -> u16;
@@ -79,20 +76,20 @@ macro_rules! impl_delegate {
 impl_delegate!(MtSender);
 impl_delegate!(MtReceiver);
 
-impl<R: Remote> MtReceiver<R> {
-    pub async fn recv(&mut self) -> Option<Result<R::PktFrom, RecvError>> {
+impl<P: Peer> MtReceiver<P> {
+    pub async fn recv(&mut self) -> Option<Result<P::PktFrom, RecvError>> {
         self.0.recv().await.map(|res| {
             res.map_err(RecvError::from).and_then(|pkt| {
                 // TODO: warn on trailing data
-                R::PktFrom::mt_deserialize::<DefCfg>(&mut io::Cursor::new(pkt.data))
+                P::PktFrom::mt_deserialize::<DefCfg>(&mut io::Cursor::new(pkt.data))
                     .map_err(RecvError::from)
             })
         })
     }
 }
 
-impl<R: Remote> MtSender<R> {
-    pub async fn send(&self, pkt: &R::PktTo) -> Result<(), SendError> {
+impl<P: Peer> MtSender<P> {
+    pub async fn send(&self, pkt: &P::PktTo) -> Result<(), SendError> {
         let mut writer = Vec::new();
         pkt.mt_serialize::<DefCfg>(&mut writer)?;
 
@@ -109,8 +106,8 @@ impl<R: Remote> MtSender<R> {
     }
 }
 
-// derive(Clone) adds unwanted trait bound to R
-impl<R: Remote> Clone for MtSender<R> {
+// derive(Clone) adds unwanted trait bound to P
+impl<P: Peer> Clone for MtSender<P> {
     fn clone(&self) -> Self {
         Self(self.0.clone())
     }
