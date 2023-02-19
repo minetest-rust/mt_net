@@ -382,7 +382,8 @@ pub struct ToolCaps {
 
 #[mt_derive(to = "clt", repr = "u8")]
 pub enum ItemType {
-    Node = 1,
+    None = 0,
+    Node,
     Craft,
     Tool,
 }
