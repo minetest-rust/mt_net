@@ -201,7 +201,7 @@ pub enum ToCltPkt {
         privs: HashSet<String>,
     } = 65,
     InvFormspec {
-        #[mt(size = "u32")]
+        #[mt(len = "u32")]
         formspec: String,
     } = 66,
     DetachedInv {
