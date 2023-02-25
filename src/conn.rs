@@ -1,52 +1,15 @@
 use super::PktInfo;
-use delegate::delegate;
+use async_trait::async_trait;
+use mt_rudp::Pkt;
+pub use mt_rudp::{Ack, Error as RudpError};
 use mt_ser::{DefCfg, MtDeserialize, MtSerialize};
 use std::{borrow::Cow, io};
 use thiserror::Error;
 
-pub trait Peer {
-    type UdpPeer: mt_rudp::UdpPeer;
-    type PktFrom: MtDeserialize;
-    type PktTo: MtSerialize + PktInfo;
-}
-
-#[cfg(feature = "client")]
-pub struct RemoteSrv;
-
-#[cfg(feature = "client")]
-impl Peer for RemoteSrv {
-    type UdpPeer = mt_rudp::RemoteSrv;
-    type PktTo = crate::ToSrvPkt;
-    type PktFrom = crate::ToCltPkt;
-}
-
-#[cfg(feature = "client")]
-pub async fn connect(addr: &str) -> io::Result<(MtSender<RemoteSrv>, MtReceiver<RemoteSrv>)> {
-    let (tx, rx) = mt_rudp::connect(addr).await?;
-    Ok((MtSender(tx), MtReceiver(rx)))
-}
-
-/*
-
-#[cfg(feature = "server")]
-pub struct RemoteClt;
-
-#[cfg(feature = "server")]
-impl Peer for RemoteClt {
-    type UdpPeer = mt_rudp::RemoteClt;
-    type To = crate::ToCltPkt;
-    type From = crate::ToSrvPkt;
-}
-
-*/
-
-pub struct MtSender<P: Peer>(pub mt_rudp::RudpSender<P::UdpPeer>);
-pub struct MtReceiver<P: Peer>(pub mt_rudp::RudpReceiver<P::UdpPeer>);
-
 #[derive(Error, Debug)]
 pub enum RecvError {
     #[error("connection error: {0}")]
-    ConnError(#[from] mt_rudp::Error),
+    ConnError(#[from] RudpError),
     #[error("deserialize error: {0}")]
     DeserializeError(#[from] mt_ser::DeserializeError),
 }
@@ -59,56 +22,61 @@ pub enum SendError {
     SerializeError(#[from] mt_ser::SerializeError),
 }
 
-macro_rules! impl_delegate {
-    ($T:ident) => {
-        impl<P: Peer> $T<P> {
-            delegate! {
-                to self.0 {
-                    pub async fn peer_id(&self) -> u16;
-                    pub async fn is_server(&self) -> bool;
-                    pub async fn close(self);
-                }
-            }
-        }
-    };
+#[async_trait]
+pub trait SenderExt {
+    type Pkt: MtSerialize + PktInfo + Send + Sync;
+
+    async fn send_raw(&self, pkt: Pkt<'_>) -> io::Result<Ack>;
+    async fn send(&self, pkt: &Self::Pkt) -> Result<Ack, SendError> {
+        let mut writer = Vec::new();
+        pkt.mt_serialize::<DefCfg>(&mut writer)?;
+
+        let (chan, unrel) = pkt.pkt_info();
+        Ok(self
+            .send_raw(Pkt {
+                chan,
+                unrel,
+                data: Cow::Borrowed(&writer),
+            })
+            .await?)
+    }
 }
 
-impl_delegate!(MtSender);
-impl_delegate!(MtReceiver);
+#[async_trait]
+pub trait ReceiverExt {
+    type Pkt: MtDeserialize;
 
-impl<P: Peer> MtReceiver<P> {
-    pub async fn recv(&mut self) -> Option<Result<P::PktFrom, RecvError>> {
-        self.0.recv().await.map(|res| {
+    async fn recv_raw(&mut self) -> Option<Result<Pkt<'static>, RudpError>>;
+    async fn recv(&mut self) -> Option<Result<Self::Pkt, RecvError>> {
+        self.recv_raw().await.map(|res| {
             res.map_err(RecvError::from).and_then(|pkt| {
                 // TODO: warn on trailing data
-                P::PktFrom::mt_deserialize::<DefCfg>(&mut io::Cursor::new(pkt.data))
+                Self::Pkt::mt_deserialize::<DefCfg>(&mut io::Cursor::new(pkt.data))
                     .map_err(RecvError::from)
             })
         })
     }
 }
 
-impl<P: Peer> MtSender<P> {
-    pub async fn send(&self, pkt: &P::PktTo) -> Result<(), SendError> {
-        let mut writer = Vec::new();
-        pkt.mt_serialize::<DefCfg>(&mut writer)?;
+#[cfg(feature = "client")]
+pub use mt_rudp::{connect, CltReceiver, CltSender, CltWorker};
 
-        let (chan, unrel) = pkt.pkt_info();
-        self.0
-            .send(mt_rudp::Pkt {
-                chan,
-                unrel,
-                data: Cow::Borrowed(&writer),
-            })
-            .await?;
+#[cfg(feature = "client")]
+#[async_trait]
+impl ReceiverExt for CltReceiver {
+    type Pkt = crate::ToCltPkt;
 
-        Ok(())
+    async fn recv_raw(&mut self) -> Option<Result<Pkt<'static>, RudpError>> {
+        self.recv_rudp().await
     }
 }
 
-// derive(Clone) adds unwanted trait bound to P
-impl<P: Peer> Clone for MtSender<P> {
-    fn clone(&self) -> Self {
-        Self(self.0.clone())
+#[cfg(feature = "client")]
+#[async_trait]
+impl SenderExt for CltSender {
+    type Pkt = crate::ToSrvPkt;
+
+    async fn send_raw(&self, pkt: Pkt<'_>) -> io::Result<Ack> {
+        self.send_rudp(pkt).await
     }
 }
