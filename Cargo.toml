@@ -8,12 +8,14 @@ all = ["client", "server", "random", "serde", "conn"]
 client = []
 conn = ["dep:mt_rudp", "dep:thiserror"]
 random = ["dep:generate-random", "dep:rand"]
-serde = ["dep:serde", "dep:serde_arrays", "enumset/serde"]
+serde = ["dep:serde", "dep:serde_arrays", "enumset/serde", "cgmath/serde", "collision/serde"]
 server = []
 test = ["client", "server", "random"]
 
 [dependencies]
 async-trait = "0.1.64"
+cgmath = "0.17.0"
+collision = "0.20.1"
 delegate = "0.9.0"
 enumset = { git = "https://github.com/Lymia/enumset" }
 generate-random = { git = "https://github.com/minetest-rust/generate-random", features = ["enumset"], optional = true }

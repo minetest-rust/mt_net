@@ -14,14 +14,34 @@ pub enum Key {
     Zoom,
 }
 
+#[cfg(feature = "client")]
+fn ser_cast_err() -> mt_ser::SerializeError {
+    mt_ser::SerializeError::Other("cast failed".into())
+}
+
+#[cfg(feature = "server")]
+fn des_cast_err() -> mt_ser::DeserializeError {
+    mt_ser::DeserializeError::Other("cast failed".into())
+}
+
 #[mt_derive(to = "srv")]
 pub struct PlayerPos {
-    pub pos_100: [i32; 3],
-    pub vel_100: [i32; 3],
-    pub pitch_100: i32,
-    pub yaw_100: i32,
+    #[mt(multiplier = "100.0 * BS")]
+    #[mt(map_ser = "|x| x.cast::<i32>().ok_or_else(ser_cast_err)")]
+    #[mt(map_des = "|x: Point3<i32>| x.cast::<f32>().ok_or_else(des_cast_err)")]
+    pub pos: Point3<f32>,
+    #[mt(multiplier = "100.0 * BS")]
+    #[mt(map_ser = "|x| x.cast::<i32>().ok_or_else(ser_cast_err)")]
+    #[mt(map_des = "|x: Vector3<i32>| x.cast::<f32>().ok_or_else(des_cast_err)")]
+    pub vel: Vector3<f32>,
+    #[mt(map_ser = "|x| Ok(x.0 as i32)", map_des = "|x: i32| Ok(Deg(x as f32))")]
+    pub pitch: Deg<f32>,
+    #[mt(map_ser = "|x| Ok(x.0 as i32)", map_des = "|x: i32| Ok(Deg(x as f32))")]
+    pub yaw: Deg<f32>,
     pub keys: EnumSet<Key>,
-    pub fov_80: u8,
+    #[mt(multiplier = "80.0")]
+    #[mt(map_ser = "|x| Ok(x.0 as u8)", map_des = "|x: u8| Ok(Rad(x as f32))")]
+    pub fov: Rad<f32>,
     pub wanted_range: u8,
 }
 
@@ -39,8 +59,13 @@ pub enum Interaction {
 #[mt(const_before = "0u8")] // version
 pub enum PointedThing {
     None = 0,
-    Node { under: [i16; 3], above: [i16; 3] },
-    Obj { obj: u16 },
+    Node {
+        under: Point3<i16>,
+        above: Point3<i16>,
+    },
+    Obj {
+        obj: u16,
+    },
 }
 
 #[mt_derive(to = "srv", repr = "u16", tag = "type", content = "data")]
@@ -49,8 +74,7 @@ pub enum ToSrvPkt {
     Init {
         serialize_version: u8,
         #[mt(const_before = "1u16")] // supported compression
-        min_proto_version: u16,
-        max_proto_version: u16,
+        proto_version: RangeInclusive<u16>,
         player_name: String,
         #[mt(default)]
         send_full_item_meta: bool,
@@ -71,7 +95,7 @@ pub enum ToSrvPkt {
     PlayerPos(PlayerPos) = 35,
     GotBlocks {
         #[mt(len = "u8")]
-        blocks: Vec<[i16; 3]>,
+        blocks: Vec<Point3<i16>>,
     } = 36,
     DeletedBlocks {
         #[mt(len = "u8")]

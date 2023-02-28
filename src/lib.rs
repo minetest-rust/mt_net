@@ -35,6 +35,11 @@ mod conn;
 #[cfg(feature = "conn")]
 pub use conn::*;
 
+pub use cgmath::{Deg, Euler, Point2, Point3, Rad, Vector2, Vector3};
+pub use collision::{Aabb2, Aabb3};
+
+pub const BS: f32 = 10.0;
+
 mod to_clt;
 mod to_srv;
 

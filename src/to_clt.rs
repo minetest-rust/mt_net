@@ -76,7 +76,10 @@ pub enum ToCltPkt {
         username: String,
     } = 2,
     AcceptAuth {
-        player_pos: [f32; 3],
+        #[mt(multiplier = "BS")]
+        #[mt(map_ser = "|x| Ok(x + Vector3::new(0.0, 0.5, 0.0) * BS)")]
+        #[mt(map_des = "|x: Point3<f32>| Ok(x - Vector3::new(0.0, 0.5, 0.0) * BS)")]
+        player_pos: Point3<f32>,
         map_seed: u64,
         send_interval: f32,
         sudo_auth_methods: EnumSet<AuthMethod>,
@@ -88,12 +91,12 @@ pub enum ToCltPkt {
     DenySudoMode = 5,
     Kick(KickReason) = 10,
     BlockData {
-        pos: [i16; 3],
+        pos: Point3<i16>,
         #[mt(zstd)]
         block: Box<MapBlock>,
     } = 32,
     AddNode {
-        pos: [i16; 3],
+        pos: Point3<i16>,
         param0: u16,
         param1: u8,
         param2: u8,
@@ -115,7 +118,8 @@ pub enum ToCltPkt {
         map_range: u32,
     } = 42,
     AddPlayerVelocity {
-        vel: [f32; 3],
+        #[mt(multiplier = "BS")]
+        vel: Vector3<f32>,
     } = 43,
     MediaPush {
         raw_hash: String,
@@ -146,22 +150,24 @@ pub enum ToCltPkt {
         damage_effect: bool,
     } = 51,
     MovePlayer {
-        pos: [f32; 3],
-        pitch: f32,
-        yaw: f32,
+        #[mt(multiplier = "BS")]
+        pos: Point3<f32>,
+        pitch: Deg<f32>,
+        yaw: Deg<f32>,
     } = 52,
     LegacyKick {
         #[mt(len = "Utf16")]
         reason: String,
     } = 53,
     Fov {
-        fov: f32,
+        fov: Deg<f32>,
         multiplier: bool,
         transition_time: f32,
     } = 54,
     DeathScreen {
         point_cam: bool,
-        point_at: [f32; 3],
+        #[mt(multiplier = "BS")]
+        point_at: Point3<f32>,
     } = 55,
     Media {
         n: u16,
@@ -186,7 +192,8 @@ pub enum ToCltPkt {
         name: String,
         gain: f32,
         source: SoundSource,
-        pos: [f32; 3],
+        #[mt(multiplier = "BS")]
+        pos: Point3<f32>,
         src_obj_id: u16,
         #[serde(rename = "loop")]
         sound_loop: bool,
@@ -231,9 +238,9 @@ pub enum ToCltPkt {
         gravity: f32,
     } = 69,
     SpawnParticle {
-        pos: [f32; 3],
-        vel: [f32; 3],
-        acc: [f32; 3],
+        pos: Point3<f32>,
+        vel: Vector3<f32>,
+        acc: Vector3<f32>,
         expiration_time: f32,
         size: f32,
         collide: bool,
@@ -248,12 +255,13 @@ pub enum ToCltPkt {
         node_param2: u8,
         node_tile: u8,
     } = 70,
+    // TODO: support new particlespawner definitions (with tweening)
     AddParticleSpawner {
         amount: u16,
         duration: f32,
-        pos: RangeInclusive<[f32; 3]>,
-        vel: RangeInclusive<[f32; 3]>,
-        acc: RangeInclusive<[f32; 3]>,
+        pos: RangeInclusive<Point3<f32>>,
+        vel: RangeInclusive<Vector3<f32>>,
+        acc: RangeInclusive<Vector3<f32>>,
         expiration_time: RangeInclusive<f32>,
         size: RangeInclusive<f32>,
         collide: bool,
@@ -296,15 +304,17 @@ pub enum ToCltPkt {
         ratio: u16,
     } = 80,
     LocalPlayerAnim {
-        idle: [i32; 2],
-        walk: [i32; 2],
-        dig: [i32; 2],
-        walk_dig: [i32; 2],
+        idle: RangeInclusive<i32>,
+        walk: RangeInclusive<i32>,
+        dig: RangeInclusive<i32>,
+        walk_dig: RangeInclusive<i32>,
         speed: f32,
     } = 81,
     EyeOffset {
-        first: [f32; 3],
-        third: [f32; 3],
+        #[mt(multiplier = "BS")]
+        first: Vector3<f32>,
+        #[mt(multiplier = "BS")]
+        third: Vector3<f32>,
     } = 82,
     RemoveParticleSpawner {
         id: u32,
@@ -331,7 +341,7 @@ pub enum ToCltPkt {
     NodeMetasChanged {
         #[mt(size = "u32", zlib)]
         #[mt(len = "NodeMetasLen")]
-        changed: HashMap<[i16; 3], NodeMeta>,
+        changed: HashMap<Vector3<i16>, NodeMeta>,
     } = 89,
     SunParams(SunParams) = 90,
     MoonParams(MoonParams) = 91,

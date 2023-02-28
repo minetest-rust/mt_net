@@ -72,11 +72,11 @@ pub enum Alpha {
 pub enum TileAnim {
     None = 0,
     VerticalFrame {
-        n_frames: [u16; 2],
+        n_frames: Vector2<u16>,
         duration: f32,
     },
     SpriteSheet {
-        aspect_ratio: [u8; 2],
+        aspect_ratio: Vector2<u8>,
         duration: f32,
     },
 }
@@ -214,28 +214,89 @@ impl MtDeserialize for TileDef {
     }
 }
 
+trait BsAabb: Sized {
+    fn ser(&self) -> Self;
+    fn des(&self) -> Self;
+}
+
+impl BsAabb for Aabb3<f32> {
+    fn ser(&self) -> Self {
+        collision::Aabb::mul_s(self, BS)
+    }
+
+    fn des(&self) -> Self {
+        collision::Aabb::mul_s(self, BS)
+    }
+}
+
+impl<T: BsAabb> BsAabb for Vec<T> {
+    fn ser(&self) -> Self {
+        self.iter().map(BsAabb::ser).collect()
+    }
+
+    fn des(&self) -> Self {
+        self.iter().map(BsAabb::des).collect()
+    }
+}
+
+impl<T: BsAabb, const N: usize> BsAabb for [T; N] {
+    fn ser(&self) -> Self {
+        std::array::from_fn(|i| self[i].ser())
+    }
+
+    fn des(&self) -> Self {
+        std::array::from_fn(|i| self[i].des())
+    }
+}
+
+#[cfg(feature = "server")]
+fn ser_bs_aabb<T: BsAabb>(aabb: &T) -> Result<T, mt_ser::SerializeError> {
+    Ok(aabb.ser())
+}
+
+#[cfg(feature = "client")]
+fn des_bs_aabb<T: BsAabb>(aabb: T) -> Result<T, mt_ser::DeserializeError> {
+    Ok(aabb.des())
+}
+
+#[mt_derive(to = "clt")]
+pub struct MountedNodeBox {
+    #[mt(map_ser = "ser_bs_aabb", map_des = "des_bs_aabb")]
+    wall_top: Aabb3<f32>,
+    #[mt(map_ser = "ser_bs_aabb", map_des = "des_bs_aabb")]
+    wall_bottom: Aabb3<f32>,
+    #[mt(map_ser = "ser_bs_aabb", map_des = "des_bs_aabb")]
+    wall_sides: Aabb3<f32>,
+}
+
+#[mt_derive(to = "clt")]
+pub struct ConnectedNodeBox {
+    #[mt(map_ser = "ser_bs_aabb", map_des = "des_bs_aabb")]
+    fixed: Vec<Aabb3<f32>>,
+    #[mt(map_ser = "ser_bs_aabb", map_des = "des_bs_aabb")]
+    connect_dirs: [Vec<Aabb3<f32>>; 6],
+    #[mt(map_ser = "ser_bs_aabb", map_des = "des_bs_aabb")]
+    disconnect_dirs: [Vec<Aabb3<f32>>; 6],
+    #[mt(map_ser = "ser_bs_aabb", map_des = "des_bs_aabb")]
+    disconnect_all: Vec<Aabb3<f32>>,
+    #[mt(map_ser = "ser_bs_aabb", map_des = "des_bs_aabb")]
+    disconnect_sides: Vec<Aabb3<f32>>,
+}
+
 #[mt_derive(to = "clt", repr = "u8", tag = "type")]
 #[mt(const_before = "6u8")]
 pub enum NodeBox {
     Cube = 0,
     Fixed {
-        fixed: Vec<RangeInclusive<[f32; 3]>>,
+        #[mt(map_ser = "ser_bs_aabb", map_des = "des_bs_aabb")]
+        fixed: Vec<Aabb3<f32>>,
     },
-    Mounted {
-        wall_top: RangeInclusive<[f32; 3]>,
-        wall_bottom: RangeInclusive<[f32; 3]>,
-        wall_sides: RangeInclusive<[f32; 3]>,
-    },
+    Mounted(Box<MountedNodeBox>),
     Leveled {
-        fixed: Vec<RangeInclusive<[f32; 3]>>,
+        #[mt(map_ser = "ser_bs_aabb", map_des = "des_bs_aabb")]
+        fixed: Vec<Aabb3<f32>>,
     },
-    Connected {
-        fixed: Vec<RangeInclusive<[f32; 3]>>,
-        connect_dirs: [Vec<RangeInclusive<[f32; 3]>>; 6],
-        disconnect_dirs: [Vec<RangeInclusive<[f32; 3]>>; 6],
-        disconnect_all: Vec<RangeInclusive<[f32; 3]>>,
-        disconnect_sides: Vec<RangeInclusive<[f32; 3]>>,
-    },
+    Connected(Box<ConnectedNodeBox>),
 }
 
 #[mt_derive(to = "clt")]
@@ -413,7 +474,7 @@ pub struct ItemDef {
     pub description: String,
     pub inventory_image: String,
     pub wield_image: String,
-    pub wield_scale: [f32; 3],
+    pub wield_scale: Vector3<f32>,
     pub stack_max: u16,
     pub usable: bool,
     pub can_point_liquids: bool,

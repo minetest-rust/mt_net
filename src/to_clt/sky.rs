@@ -188,5 +188,5 @@ pub struct CloudParams {
     pub ambient_color: Color,
     pub height: f32,
     pub thickness: f32,
-    pub speed: [f32; 2],
+    pub speed: Vector2<f32>,
 }

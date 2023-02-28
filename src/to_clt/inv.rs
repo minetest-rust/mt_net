@@ -23,7 +23,7 @@ fn read_line(reader: &mut impl std::io::Read) -> Result<String, mt_ser::Deserial
         .try_collect::<Vec<_>>()?;
 
     String::from_utf8(utf8)
-        .map_err(|e| mt_ser::DeserializeError::Other(format!("Invalid UTF-8: {e}").into()))
+        .map_err(|e| mt_ser::DeserializeError::Other(format!("Invalid UTF-8: {e}")))
 }
 
 #[cfg(feature = "client")]
