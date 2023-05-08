@@ -105,10 +105,18 @@ enum TileFlagInternal {
     Align,
 }
 
+#[mt_derive(to = "clt")]
+pub struct Texture {
+    pub name: String,
+    /// set to zero. use this field however you like
+    #[mt(map_ser = "|_| Ok(())", map_des = "|_: ()| Ok(0)")]
+    pub custom: usize,
+}
+
 #[mt_derive(to = "clt", custom)]
 pub struct TileDef {
     // #[mt(const_before = "6u8")]
-    pub texture: String,
+    pub texture: Texture,
     pub animation: TileAnim,
     pub flags: EnumSet<TileFlag>,
     pub color: Option<[u8; 3]>,
