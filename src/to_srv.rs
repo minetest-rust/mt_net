@@ -34,8 +34,10 @@ pub struct PlayerPos {
     #[mt(map_ser = "|x| x.cast::<i32>().ok_or_else(ser_cast_err)")]
     #[mt(map_des = "|x: Vector3<i32>| x.cast::<f32>().ok_or_else(des_cast_err)")]
     pub vel: Vector3<f32>,
+    #[mt(multiplier = "100.0")]
     #[mt(map_ser = "|x| Ok(x.0 as i32)", map_des = "|x: i32| Ok(Deg(x as f32))")]
     pub pitch: Deg<f32>,
+    #[mt(multiplier = "100.0")]
     #[mt(map_ser = "|x| Ok(x.0 as i32)", map_des = "|x: i32| Ok(Deg(x as f32))")]
     pub yaw: Deg<f32>,
     pub keys: EnumSet<Key>,
